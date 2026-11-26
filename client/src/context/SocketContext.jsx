@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { io } from 'socket.io-client';
-import { useAuth } from './AuthContext';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { io } from "socket.io-client";
+import { useAuth } from "./AuthContext";
 
 const SocketContext = createContext(null);
 
@@ -9,16 +9,22 @@ export const SocketProvider = ({ children }) => {
   const { user } = useAuth();
 
   useEffect(() => {
-    const newSocket = io(window.location.origin, {
-      transports: ['websocket', 'polling'],
+    const apiUrl = import.meta.env.VITE_API_URL;
+    const socketUrl = apiUrl
+      ? apiUrl.replace(/\/api\/?$/, "")
+      : window.location.origin;
+
+    const newSocket = io(socketUrl, {
+      transports: ["websocket", "polling"],
     });
 
     setSocket(newSocket);
 
-    newSocket.on('connect', () => {
-      console.log('⚡ Socket connected to server');
+    newSocket.on("connect", () => {
+      console.log("⚡ Socket connected to server");
+
       if (user?._id) {
-        newSocket.emit('register_user', user._id);
+        newSocket.emit("register_user", user._id);
       }
     });
 
@@ -27,28 +33,27 @@ export const SocketProvider = ({ children }) => {
     };
   }, []);
 
-  // Update registered user on auth change
   useEffect(() => {
     if (socket && user?._id) {
-      socket.emit('register_user', user._id);
+      socket.emit("register_user", user._id);
     }
   }, [socket, user]);
 
   const joinSession = (sessionId) => {
     if (socket && sessionId) {
-      socket.emit('join_session', { sessionId, user });
+      socket.emit("join_session", { sessionId, user });
     }
   };
 
   const leaveSession = (sessionId) => {
     if (socket && sessionId) {
-      socket.emit('leave_session', { sessionId, user });
+      socket.emit("leave_session", { sessionId, user });
     }
   };
 
   const sendMessage = (sessionId, content) => {
     if (socket && sessionId && user?._id) {
-      socket.emit('send_message', {
+      socket.emit("send_message", {
         sessionId,
         senderId: user._id,
         content,
@@ -58,7 +63,7 @@ export const SocketProvider = ({ children }) => {
 
   const notifySessionUpdate = (sessionId, updatedSession) => {
     if (socket && sessionId) {
-      socket.emit('session_confirmation_updated', {
+      socket.emit("session_confirmation_updated", {
         sessionId,
         updatedSession,
       });
@@ -82,8 +87,10 @@ export const SocketProvider = ({ children }) => {
 
 export const useSocket = () => {
   const context = useContext(SocketContext);
+
   if (!context) {
-    throw new Error('useSocket must be used within a SocketProvider');
+    throw new Error("useSocket must be used within a SocketProvider");
   }
+
   return context;
 };

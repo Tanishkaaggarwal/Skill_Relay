@@ -1,13 +1,14 @@
+
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Intercept requests to add Authorization header
+// Add Authorization header
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('skill_relay_token');
@@ -19,14 +20,16 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Intercept responses for global error handling
+// Global error handling
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      // If unauthorized and not on login page, can clear token
-      if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
-        // Optional: clear if token expired
+      if (
+        !window.location.pathname.includes('/login') &&
+        !window.location.pathname.includes('/register')
+      ) {
+        // Optional: clear token if expired
       }
     }
     return Promise.reject(error);
